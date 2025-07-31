@@ -60,11 +60,42 @@ def run_command(command, log_path, console=None):
     process.wait()
     return process.returncode
 
+def run_command_filtered(command, log_path, console=None, error_filter=None):
+    """Run command and only output lines to console that match the error_filter."""
+    creationflags = 0
+    if os.name == "nt":
+        creationflags = subprocess.CREATE_NO_WINDOW
+
+    process = subprocess.Popen([
+            "powershell",
+            "-NoProfile",
+            "-Command",
+            command
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        creationflags=creationflags
+    )
+    for line in process.stdout:
+        stripped = line.strip()
+        log_message(log_path, stripped)
+        if console and error_filter and error_filter(stripped):
+            console(f"{stripped}\n", "error")
+    process.wait()
+    return process.returncode
+
 def export_drivers(destination_path, log_path, console=None):
     os.makedirs(destination_path, exist_ok=True)
     command = f"Export-WindowsDriver -Online -Destination \"{destination_path}\""
     log_message(log_path, f"Starting export to {destination_path}", console)
-    returncode = run_command(command, log_path, console)
+    if console:
+        console("Running export command...\n")
+
+    def is_error(line: str) -> bool:
+        return "error" in line.lower() or "failed" in line.lower()
+
+    returncode = run_command_filtered(command, log_path, console, is_error)
     log_message(log_path, f"Export finished with exit code {returncode}", console)
 
 def import_drivers(source_path, log_path, console=None):
@@ -124,11 +155,12 @@ def start_gui():
             messagebox.showerror("Missing Info", "Please select an export folder")
             return
 
+        progress.pack(fill='x', padx=5, pady=5)
         progress.start()
 
         def task():
             export_drivers(folder, logfile, append_console)
-            progress.after(0, progress.stop)
+            progress.after(0, lambda: (progress.stop(), progress.pack_forget()))
 
         threading.Thread(target=task, daemon=True).start()
 
@@ -139,11 +171,12 @@ def start_gui():
             messagebox.showerror("Missing Info", "Please select an import folder")
             return
 
+        progress.pack(fill='x', padx=5, pady=5)
         progress.start()
 
         def task():
             import_drivers(folder, logfile, append_console)
-            progress.after(0, progress.stop)
+            progress.after(0, lambda: (progress.stop(), progress.pack_forget()))
 
         threading.Thread(target=task, daemon=True).start()
 
@@ -186,12 +219,19 @@ def start_gui():
 
     console = scrolledtext.ScrolledText(root, height=12, bg="black", fg="white")
     console.pack(fill='x', padx=5, pady=5)
+    console.tag_config('error', foreground='red')
 
-    def append_console(text):
-        console.after(0, lambda t=text: (console.insert(tk.END, t), console.see(tk.END)))
+    def append_console(text, tag=None):
+        def _write():
+            if tag:
+                console.insert(tk.END, text, tag)
+            else:
+                console.insert(tk.END, text)
+            console.see(tk.END)
+        console.after(0, _write)
 
     progress = ttk.Progressbar(root, mode="indeterminate")
-    progress.pack(fill='x', padx=5, pady=5)
+    progress.pack_forget()
 
     help_text = """
 --- GUI Mode ---
