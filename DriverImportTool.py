@@ -2,6 +2,7 @@
 # Python 3.13 compatible
 import os
 import subprocess
+import threading
 import socket
 import time
 import ctypes
@@ -25,12 +26,16 @@ def is_admin():
         return False
 
 def log_message(log_path, message, console=None):
+    """Log a message to file and optionally update the GUI console."""
     timestamp = datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
     with open(log_path, "a", encoding="utf-8") as log_file:
         log_file.write(f"{timestamp} {message}\n")
     if console:
-        console.insert(tk.END, f"{timestamp} {message}\n")
-        console.see(tk.END)
+        if callable(console):
+            console(f"{timestamp} {message}\n")
+        else:
+            console.insert(tk.END, f"{timestamp} {message}\n")
+            console.see(tk.END)
     else:
         print(f"{timestamp} {message}")
 
@@ -113,20 +118,34 @@ def start_gui():
             entry.insert(0, path)
 
     def run_export():
-        folder = export_path.get()
-        logfile = export_log.get()
+        folder = export_path_var.get()
+        logfile = export_log_var.get()
         if not folder:
             messagebox.showerror("Missing Info", "Please select an export folder")
             return
-        export_drivers(folder, logfile, console)
+
+        progress.start()
+
+        def task():
+            export_drivers(folder, logfile, append_console)
+            progress.after(0, progress.stop)
+
+        threading.Thread(target=task, daemon=True).start()
 
     def run_import():
-        folder = import_path.get()
-        logfile = import_log.get()
+        folder = import_path_var.get()
+        logfile = import_log_var.get()
         if not folder:
             messagebox.showerror("Missing Info", "Please select an import folder")
             return
-        import_drivers(folder, logfile, console)
+
+        progress.start()
+
+        def task():
+            import_drivers(folder, logfile, append_console)
+            progress.after(0, progress.stop)
+
+        threading.Thread(target=task, daemon=True).start()
 
     root = tk.Tk()
     root.title("Driver Import Tool")
@@ -144,9 +163,14 @@ def start_gui():
     nb.add(frame_help, text="Help")
     nb.pack(expand=True, fill='both')
 
-    for frame, path_var, log_var, label in [
-        (frame_import, tk.StringVar(), tk.StringVar(value=DEFAULT_LOG_PATH), "Import From"),
-        (frame_export, tk.StringVar(), tk.StringVar(value=DEFAULT_LOG_PATH), "Export To")
+    import_path_var = tk.StringVar()
+    import_log_var = tk.StringVar(value=DEFAULT_LOG_PATH)
+    export_path_var = tk.StringVar()
+    export_log_var = tk.StringVar(value=DEFAULT_LOG_PATH)
+
+    for frame, path_var, log_var, label, command in [
+        (frame_import, import_path_var, import_log_var, "Import From", run_import),
+        (frame_export, export_path_var, export_log_var, "Export To", run_export)
     ]:
         ttk.Label(frame, text=f"{label} Folder:").pack(pady=5)
         path_entry = ttk.Entry(frame, textvariable=path_var, width=70)
@@ -158,14 +182,16 @@ def start_gui():
         log_entry.pack()
         ttk.Button(frame, text="Browse", command=lambda e=log_entry: select_log(e)).pack(pady=2)
 
-        ttk.Button(frame, text="Start", command=run_import if label == "Import From" else run_export).pack(pady=10)
-
-    global import_path, import_log, export_path, export_log, console
-    import_path, import_log = path_var, log_var
-    export_path, export_log = path_var, log_var
+        ttk.Button(frame, text="Start", command=command).pack(pady=10)
 
     console = scrolledtext.ScrolledText(root, height=12, bg="black", fg="white")
     console.pack(fill='x', padx=5, pady=5)
+
+    def append_console(text):
+        console.after(0, lambda t=text: (console.insert(tk.END, t), console.see(tk.END)))
+
+    progress = ttk.Progressbar(root, mode="indeterminate")
+    progress.pack(fill='x', padx=5, pady=5)
 
     help_text = """
 --- GUI Mode ---
