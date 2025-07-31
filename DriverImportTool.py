@@ -97,6 +97,7 @@ def export_drivers(destination_path, log_path, console=None):
 
     returncode = run_command_filtered(command, log_path, console, is_error)
     log_message(log_path, f"Export finished with exit code {returncode}", console)
+    return returncode
 
 def import_drivers(source_path, log_path, console=None):
     all_inf_paths = []
@@ -113,6 +114,8 @@ def import_drivers(source_path, log_path, console=None):
 
     combined_paths = all_inf_paths + net_inf_paths
     log_message(log_path, f"Found {len(combined_paths)} driver files to import.", console)
+
+    any_failed = False
 
     for inf_file in combined_paths:
         attempt = 0
@@ -132,6 +135,11 @@ def import_drivers(source_path, log_path, console=None):
 
         if attempt == RETRY_ATTEMPTS:
             log_message(log_path, f"Failed to install after {RETRY_ATTEMPTS} attempts: {inf_file}", console)
+            any_failed = True
+
+    final_code = 0 if not any_failed else 1
+    log_message(log_path, f"Import finished with exit code {final_code}", console)
+    return final_code
 
 # --- GUI ---
 def start_gui():
@@ -155,12 +163,17 @@ def start_gui():
             messagebox.showerror("Missing Info", "Please select an export folder")
             return
 
+        start_export_btn.config(state=tk.DISABLED)
         progress.pack(fill='x', padx=5, pady=5)
         progress.start()
 
         def task():
             export_drivers(folder, logfile, append_console)
-            progress.after(0, lambda: (progress.stop(), progress.pack_forget()))
+            progress.after(0, lambda: (
+                progress.stop(),
+                progress.pack_forget(),
+                start_export_btn.config(state=tk.NORMAL)
+            ))
 
         threading.Thread(target=task, daemon=True).start()
 
@@ -171,12 +184,17 @@ def start_gui():
             messagebox.showerror("Missing Info", "Please select an import folder")
             return
 
+        start_import_btn.config(state=tk.DISABLED)
         progress.pack(fill='x', padx=5, pady=5)
         progress.start()
 
         def task():
             import_drivers(folder, logfile, append_console)
-            progress.after(0, lambda: (progress.stop(), progress.pack_forget()))
+            progress.after(0, lambda: (
+                progress.stop(),
+                progress.pack_forget(),
+                start_import_btn.config(state=tk.NORMAL)
+            ))
 
         threading.Thread(target=task, daemon=True).start()
 
@@ -201,21 +219,33 @@ def start_gui():
     export_path_var = tk.StringVar()
     export_log_var = tk.StringVar(value=DEFAULT_LOG_PATH)
 
-    for frame, path_var, log_var, label, command in [
-        (frame_import, import_path_var, import_log_var, "Import From", run_import),
-        (frame_export, export_path_var, export_log_var, "Export To", run_export)
-    ]:
-        ttk.Label(frame, text=f"{label} Folder:").pack(pady=5)
-        path_entry = ttk.Entry(frame, textvariable=path_var, width=70)
-        path_entry.pack()
-        ttk.Button(frame, text="Browse", command=lambda e=path_entry: select_folder(e)).pack(pady=2)
+    # Import Tab Widgets
+    ttk.Label(frame_import, text="Import From Folder:").pack(pady=5)
+    import_path_entry = ttk.Entry(frame_import, textvariable=import_path_var, width=70)
+    import_path_entry.pack()
+    ttk.Button(frame_import, text="Browse", command=lambda e=import_path_entry: select_folder(e)).pack(pady=2)
 
-        ttk.Label(frame, text="Log File Path:").pack(pady=5)
-        log_entry = ttk.Entry(frame, textvariable=log_var, width=70)
-        log_entry.pack()
-        ttk.Button(frame, text="Browse", command=lambda e=log_entry: select_log(e)).pack(pady=2)
+    ttk.Label(frame_import, text="Log File Path:").pack(pady=5)
+    import_log_entry = ttk.Entry(frame_import, textvariable=import_log_var, width=70)
+    import_log_entry.pack()
+    ttk.Button(frame_import, text="Browse", command=lambda e=import_log_entry: select_log(e)).pack(pady=2)
 
-        ttk.Button(frame, text="Start", command=command).pack(pady=10)
+    start_import_btn = ttk.Button(frame_import, text="Start", command=run_import)
+    start_import_btn.pack(pady=10)
+
+    # Export Tab Widgets
+    ttk.Label(frame_export, text="Export To Folder:").pack(pady=5)
+    export_path_entry = ttk.Entry(frame_export, textvariable=export_path_var, width=70)
+    export_path_entry.pack()
+    ttk.Button(frame_export, text="Browse", command=lambda e=export_path_entry: select_folder(e)).pack(pady=2)
+
+    ttk.Label(frame_export, text="Log File Path:").pack(pady=5)
+    export_log_entry = ttk.Entry(frame_export, textvariable=export_log_var, width=70)
+    export_log_entry.pack()
+    ttk.Button(frame_export, text="Browse", command=lambda e=export_log_entry: select_log(e)).pack(pady=2)
+
+    start_export_btn = ttk.Button(frame_export, text="Start", command=run_export)
+    start_export_btn.pack(pady=10)
 
     console = scrolledtext.ScrolledText(root, height=12, bg="black", fg="white")
     console.pack(fill='x', padx=5, pady=5)
