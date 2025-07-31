@@ -35,8 +35,21 @@ def log_message(log_path, message, console=None):
         print(f"{timestamp} {message}")
 
 def run_command(command, log_path, console=None):
-    process = subprocess.Popen(["powershell", "-Command", command],
-                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    creationflags = 0
+    if os.name == "nt":
+        creationflags = subprocess.CREATE_NO_WINDOW
+
+    process = subprocess.Popen([
+            "powershell",
+            "-NoProfile",
+            "-Command",
+            command
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        creationflags=creationflags
+    )
     for line in process.stdout:
         log_message(log_path, line.strip(), console)
     process.wait()
