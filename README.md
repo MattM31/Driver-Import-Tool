@@ -39,6 +39,7 @@ DriverImportTool.exe -console -import "C:\Drivers\LenovoM74"
 DriverImportTool.exe -console -export "C:\Drivers\HPEliteDesk"
 DriverImportTool.exe -console -import "C:\Drivers\Dell" -logFilePath "D:\Logs\CustomImportLog.log"
 DriverImportTool.exe -console -export "C:\Drivers\HP" -nolog
+DriverImportTool.exe -console -importAuto "\\10.20.8.226\Drivers$"
 ```
 
 If `-logFilePath` is omitted, logs are saved to:
