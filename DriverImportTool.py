@@ -160,6 +160,7 @@ def import_drivers(source_path, log_path, console=None):
         attempt = 0
         while attempt < RETRY_ATTEMPTS:
             if os.path.exists(inf_file):
+                print(inf_file)
                 command = f'pnputil /add-driver "{inf_file}" /install'
                 log_message(log_path, f"Installing driver: {inf_file}", console)
                 returncode = run_command(command, log_path, console)
