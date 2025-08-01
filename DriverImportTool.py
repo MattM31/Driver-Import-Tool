@@ -139,6 +139,7 @@ def export_drivers(destination_path, log_path, console=None):
     return returncode
 
 def import_drivers(source_path, log_path, console=None):
+
     all_inf_paths = []
     net_inf_paths = []
 
@@ -146,20 +147,25 @@ def import_drivers(source_path, log_path, console=None):
         for file in files:
             if file.lower().endswith(".inf"):
                 full_path = os.path.normpath(os.path.join(root, file))
+
                 if "net" in file.lower() or "network" in file.lower():
                     net_inf_paths.append(full_path)
                 else:
                     all_inf_paths.append(full_path)
 
+
     combined_paths = all_inf_paths + net_inf_paths
     log_message(log_path, f"Found {len(combined_paths)} driver files to import.", console)
+
 
     any_failed = False
 
     for inf_file in combined_paths:
         attempt = 0
+
         while attempt < RETRY_ATTEMPTS and not os.path.exists(inf_file):
             log_message(log_path, f"Path not found: {inf_file}, retrying in {RETRY_DELAY}s...", console)
+
             attempt += 1
             time.sleep(RETRY_DELAY)
 
@@ -179,20 +185,26 @@ def import_drivers(source_path, log_path, console=None):
     log_message(log_path, f"Import finished with exit code {final_code}", console)
     return final_code
 
+
 # --- GUI ---
 def start_gui():
+
     def select_folder(entry):
         path = filedialog.askdirectory()
         if path:
             entry.delete(0, tk.END)
+
             entry.insert(0, os.path.normpath(path))
+
 
     def select_log(entry):
         path = filedialog.asksaveasfilename(defaultextension=".log",
                                             initialfile=f"DriverImporter-{PC_NAME}.log")
         if path:
             entry.delete(0, tk.END)
+
             entry.insert(0, os.path.normpath(path))
+
 
     def run_export():
         folder = os.path.normpath(export_path_var.get())
