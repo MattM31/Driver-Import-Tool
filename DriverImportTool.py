@@ -259,7 +259,7 @@ def start_gui():
         threading.Thread(target=task, daemon=True).start()
 
     root = tk.Tk()
-    root.title("Driver Import Tool")
+    root.title("Driver Management Tool")
     root.geometry("750x500")
     if not is_admin():
         messagebox.showwarning("Admin Rights", "Warning: This tool is not running as Administrator. Functions may fail.")
