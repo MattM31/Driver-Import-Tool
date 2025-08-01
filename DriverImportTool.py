@@ -204,7 +204,6 @@ def start_gui():
             return
 
         start_export_btn.config(state=tk.DISABLED)
-        progress.pack(fill='x', padx=5, pady=5)
         progress.start()
 
         def task():
@@ -217,7 +216,6 @@ def start_gui():
             finally:
                 progress.after(0, lambda: (
                     progress.stop(),
-                    progress.pack_forget(),
                     start_export_btn.config(state=tk.NORMAL)
                 ))
 
@@ -232,7 +230,6 @@ def start_gui():
             return
 
         start_import_btn.config(state=tk.DISABLED)
-        progress.pack(fill='x', padx=5, pady=5)
         progress.start()
 
         def task():
@@ -245,7 +242,6 @@ def start_gui():
             finally:
                 progress.after(0, lambda: (
                     progress.stop(),
-                    progress.pack_forget(),
                     start_import_btn.config(state=tk.NORMAL)
                 ))
 
@@ -332,7 +328,7 @@ def start_gui():
         console.after(0, _write)
 
     progress = ttk.Progressbar(root, mode="indeterminate")
-    progress.pack_forget()
+    progress.pack(fill='x', padx=5, pady=5)
 
     help_text = """
 --- GUI Mode ---
