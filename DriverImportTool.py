@@ -26,18 +26,57 @@ def is_admin():
         return False
 
 def log_message(log_path, message, console=None):
-    """Log a message to file and optionally update the GUI console."""
+    """Log a message to file and optionally update the GUI console.
+
+    Any errors encountered while writing to the log file are reported back to the
+    console in red text but do not interrupt execution."""
     timestamp = datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
-    with open(log_path, "a", encoding="utf-8") as log_file:
-        log_file.write(f"{timestamp} {message}\n")
+    log_line = f"{timestamp} {message}\n"
+    if log_path:
+        try:
+            with open(log_path, "a", encoding="utf-8") as log_file:
+                log_file.write(log_line)
+        except Exception as e:  # PermissionError or other IO issues
+            err_msg = "Error: Incorrect Permissions" if isinstance(e, PermissionError) else f"Error writing log: {e}"
+            err_line = f"{timestamp} {err_msg}\n"
+            if console:
+                if callable(console):
+                    console(err_line, "error")
+                else:
+                    console.insert(tk.END, err_line, "error")
+                    console.see(tk.END)
+            else:
+                print(err_line, end="")
     if console:
         if callable(console):
-            console(f"{timestamp} {message}\n")
+            console(log_line)
         else:
-            console.insert(tk.END, f"{timestamp} {message}\n")
+            console.insert(tk.END, log_line)
             console.see(tk.END)
     else:
-        print(f"{timestamp} {message}")
+        print(log_line, end="")
+
+def prepare_log(log_path, console=None):
+    """Ensure the log file can be created. Return usable path or None."""
+    if not log_path:
+        return None
+    try:
+        Path(log_path).parent.mkdir(parents=True, exist_ok=True)
+        with open(log_path, "a", encoding="utf-8"):
+            pass
+        return log_path
+    except Exception as e:
+        timestamp = datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
+        err = f"{timestamp} Error: Cannot create log file '{log_path}': {e}\n"
+        if console:
+            if callable(console):
+                console(err, "error")
+            else:
+                console.insert(tk.END, err, "error")
+                console.see(tk.END)
+        else:
+            print(err, end="")
+        return None
 
 def run_command(command, log_path, console=None):
     creationflags = 0
@@ -158,7 +197,8 @@ def start_gui():
 
     def run_export():
         folder = export_path_var.get()
-        logfile = export_log_var.get()
+        logfile = None if export_nolog_var.get() else export_log_var.get()
+        logfile = prepare_log(logfile, append_console)
         if not folder:
             messagebox.showerror("Missing Info", "Please select an export folder")
             return
@@ -168,18 +208,25 @@ def start_gui():
         progress.start()
 
         def task():
-            export_drivers(folder, logfile, append_console)
-            progress.after(0, lambda: (
-                progress.stop(),
-                progress.pack_forget(),
-                start_export_btn.config(state=tk.NORMAL)
-            ))
+            try:
+                export_drivers(folder, logfile, append_console)
+            except Exception as e:
+                err_msg = f"Error: {e}"
+                append_console(err_msg + "\n", "error")
+                log_message(logfile, err_msg, append_console)
+            finally:
+                progress.after(0, lambda: (
+                    progress.stop(),
+                    progress.pack_forget(),
+                    start_export_btn.config(state=tk.NORMAL)
+                ))
 
         threading.Thread(target=task, daemon=True).start()
 
     def run_import():
         folder = import_path_var.get()
-        logfile = import_log_var.get()
+        logfile = None if import_nolog_var.get() else import_log_var.get()
+        logfile = prepare_log(logfile, append_console)
         if not folder:
             messagebox.showerror("Missing Info", "Please select an import folder")
             return
@@ -189,12 +236,18 @@ def start_gui():
         progress.start()
 
         def task():
-            import_drivers(folder, logfile, append_console)
-            progress.after(0, lambda: (
-                progress.stop(),
-                progress.pack_forget(),
-                start_import_btn.config(state=tk.NORMAL)
-            ))
+            try:
+                import_drivers(folder, logfile, append_console)
+            except Exception as e:
+                err_msg = f"Error: {e}"
+                append_console(err_msg + "\n", "error")
+                log_message(logfile, err_msg, append_console)
+            finally:
+                progress.after(0, lambda: (
+                    progress.stop(),
+                    progress.pack_forget(),
+                    start_import_btn.config(state=tk.NORMAL)
+                ))
 
         threading.Thread(target=task, daemon=True).start()
 
@@ -218,6 +271,8 @@ def start_gui():
     import_log_var = tk.StringVar(value=DEFAULT_LOG_PATH)
     export_path_var = tk.StringVar()
     export_log_var = tk.StringVar(value=DEFAULT_LOG_PATH)
+    import_nolog_var = tk.IntVar(value=0)
+    export_nolog_var = tk.IntVar(value=0)
 
     # Import Tab Widgets
     ttk.Label(frame_import, text="Import From Folder:").pack(pady=5)
@@ -228,7 +283,15 @@ def start_gui():
     ttk.Label(frame_import, text="Log File Path:").pack(pady=5)
     import_log_entry = ttk.Entry(frame_import, textvariable=import_log_var, width=70)
     import_log_entry.pack()
-    ttk.Button(frame_import, text="Browse", command=lambda e=import_log_entry: select_log(e)).pack(pady=2)
+    import_log_browse = ttk.Button(frame_import, text="Browse", command=lambda e=import_log_entry: select_log(e))
+    import_log_browse.pack(pady=2)
+    def toggle_import_log():
+        state = tk.DISABLED if import_nolog_var.get() else tk.NORMAL
+        import_log_entry.config(state=state)
+        import_log_browse.config(state=state)
+
+    ttk.Checkbutton(frame_import, text="Don't use a log file", variable=import_nolog_var,
+                    command=toggle_import_log).pack(pady=2)
 
     start_import_btn = ttk.Button(frame_import, text="Start", command=run_import)
     start_import_btn.pack(pady=10)
@@ -242,7 +305,15 @@ def start_gui():
     ttk.Label(frame_export, text="Log File Path:").pack(pady=5)
     export_log_entry = ttk.Entry(frame_export, textvariable=export_log_var, width=70)
     export_log_entry.pack()
-    ttk.Button(frame_export, text="Browse", command=lambda e=export_log_entry: select_log(e)).pack(pady=2)
+    export_log_browse = ttk.Button(frame_export, text="Browse", command=lambda e=export_log_entry: select_log(e))
+    export_log_browse.pack(pady=2)
+    def toggle_export_log():
+        state = tk.DISABLED if export_nolog_var.get() else tk.NORMAL
+        export_log_entry.config(state=state)
+        export_log_browse.config(state=state)
+
+    ttk.Checkbutton(frame_export, text="Don't use a log file", variable=export_nolog_var,
+                    command=toggle_export_log).pack(pady=2)
 
     start_export_btn = ttk.Button(frame_export, text="Start", command=run_export)
     start_export_btn.pack(pady=10)
@@ -266,13 +337,13 @@ def start_gui():
     help_text = """
 --- GUI Mode ---
 1. Use the Import or Export tab.
-2. Select your folder and log file location.
+2. Select your folder and log file location (or tick 'Don't use a log file').
 3. Click Start to run the process.
 
 --- Console Mode ---
 Run the tool from command line:
   DriverImportTool.exe -console -import "C:\\Path" -logFilePath "C:\\log.txt"
-  DriverImportTool.exe -console -export "C:\\Path" (uses default log if not provided)
+  DriverImportTool.exe -console -export "C:\\Path" -nolog
 
 Note: Network drivers are installed last to reduce risk of connection dropouts.
 Admin rights are required for full functionality.
@@ -289,14 +360,22 @@ def start_console():
     parser.add_argument("-import", dest="import_path", type=str, help="Path to import drivers from")
     parser.add_argument("-export", dest="export_path", type=str, help="Path to export drivers to")
     parser.add_argument("-logFilePath", dest="log_file", type=str, default=DEFAULT_LOG_PATH)
+    parser.add_argument("-nolog", action="store_true", help="Do not create a log file")
     args = parser.parse_args()
 
-    if args.import_path:
-        import_drivers(args.import_path, args.log_file)
-    elif args.export_path:
-        export_drivers(args.export_path, args.log_file)
-    else:
-        print("Missing -import or -export path")
+    log_file = None if args.nolog else prepare_log(args.log_file)
+
+    try:
+        if args.import_path:
+            import_drivers(args.import_path, log_file)
+        elif args.export_path:
+            export_drivers(args.export_path, log_file)
+        else:
+            print("Missing -import or -export path")
+    except Exception as e:
+        err_msg = f"Error: {e}"
+        log_message(log_file, err_msg)
+        print(err_msg)
 
 # --- Entry Point ---
 if __name__ == "__main__":
