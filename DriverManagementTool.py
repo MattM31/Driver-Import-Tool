@@ -262,7 +262,7 @@ def start_gui():
     root = tk.Tk()
     root.title("Driver Management Tool v.0.91")
     root.geometry("750x500")
-    root.iconbitmap("./DrivermanagementTool.ico")
+    root.iconbitmap(default=os.path.join(os.path.dirname(__file__), 'DriverManagementTool.ico'))
 
     
     if not is_admin():

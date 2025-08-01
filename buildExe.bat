@@ -1,1 +1,1 @@
-pyinstaller --noconfirm --onefile --windowed --icon=DriverManagementTool.ico DriverImportTool.py 
+pyinstaller --noconfirm --noconsole --onefile -i='.\DriverManagementTool.ico' --add-data DriverManagementTool.ico:. DriverManagementTool.py
