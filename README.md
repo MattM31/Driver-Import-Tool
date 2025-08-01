@@ -73,7 +73,8 @@ To package into a `.exe`:
 pyinstaller --noconfirm --onefile --windowed DriverImportTool.py
 ```
 
-> To enable console output for console mode, remove `--windowed`
+Console mode now opens its own window when the `-console` flag is used, so you
+can keep the `--windowed` option.
 
 ---
 

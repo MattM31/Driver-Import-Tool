@@ -7,6 +7,7 @@ import socket
 import time
 import ctypes
 import argparse
+import sys
 from datetime import datetime
 from pathlib import Path
 import tkinter as tk
@@ -364,6 +365,15 @@ Admin rights are required for full functionality.
 
 # --- CLI ---
 def start_console():
+    if os.name == "nt":
+        try:
+            # Attach to parent console if possible, otherwise create a new one
+            if ctypes.windll.kernel32.AttachConsole(-1) == 0:
+                ctypes.windll.kernel32.AllocConsole()
+            sys.stdout = open("CONOUT$", "w")
+            sys.stderr = open("CONOUT$", "w")
+        except Exception:
+            pass
     parser = argparse.ArgumentParser()
     parser.add_argument("-console", action="store_true")
     parser.add_argument("-import", dest="import_path", type=str, help="Path to import drivers from")
@@ -391,7 +401,6 @@ def start_console():
 
 # --- Entry Point ---
 if __name__ == "__main__":
-    import sys
     if "-console" in sys.argv:
         start_console()
     else:
