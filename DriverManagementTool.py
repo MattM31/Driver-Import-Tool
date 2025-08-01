@@ -1,4 +1,4 @@
-# Driver Import Tool v0.9
+# Driver Management Tool v0.91
 # Python 3.13 compatible
 import os
 import subprocess
@@ -15,7 +15,7 @@ from tkinter import ttk, filedialog, messagebox, scrolledtext
 
 # --- Constants ---
 PC_NAME = socket.gethostname()
-DEFAULT_LOG_PATH = f"C:\\DriverImporter-{PC_NAME}.log"
+DEFAULT_LOG_PATH = f"C:\\DriverManagementTool-{PC_NAME}.log"
 RETRY_ATTEMPTS = 3
 RETRY_DELAY = 10
 
@@ -360,7 +360,7 @@ Note: Network drivers are installed last to reduce risk of connection dropouts.
 Admin rights are required for full functionality.
     """
     ttk.Label(frame_help, text=help_text, justify="left").pack(padx=10, pady=10, anchor="w")
-    ttk.Label(root, text="Version 0.9").pack(side="bottom", anchor="e", padx=10, pady=5)
+    ttk.Label(root, text="Version 0.91").pack(side="bottom", anchor="e", padx=10, pady=5)
 
     root.mainloop()
 
