@@ -145,7 +145,7 @@ def import_drivers(source_path, log_path, console=None):
     for root, _, files in os.walk(source_path):
         for file in files:
             if file.lower().endswith(".inf"):
-                full_path = os.path.join(root, file)
+                full_path = os.path.normpath(os.path.join(root, file))
                 if "net" in file.lower() or "network" in file.lower():
                     net_inf_paths.append(full_path)
                 else:
@@ -158,22 +158,21 @@ def import_drivers(source_path, log_path, console=None):
 
     for inf_file in combined_paths:
         attempt = 0
-        while attempt < RETRY_ATTEMPTS:
-            if os.path.exists(inf_file):
-                command = f'pnputil /add-driver "{inf_file}" /install'
-                log_message(log_path, f"Installing driver: {inf_file}", console)
-                returncode = run_command(command, log_path, console)
-                if returncode == 0:
-                    break
-                else:
-                    log_message(log_path, f"Error installing {inf_file}, retrying...", console)
-            else:
-                log_message(log_path, f"Path not found: {inf_file}, retrying in {RETRY_DELAY}s...", console)
+        while attempt < RETRY_ATTEMPTS and not os.path.exists(inf_file):
+            log_message(log_path, f"Path not found: {inf_file}, retrying in {RETRY_DELAY}s...", console)
             attempt += 1
             time.sleep(RETRY_DELAY)
 
-        if attempt == RETRY_ATTEMPTS:
-            log_message(log_path, f"Failed to install after {RETRY_ATTEMPTS} attempts: {inf_file}", console)
+        if not os.path.exists(inf_file):
+            log_message(log_path, f"Failed to find path after {RETRY_ATTEMPTS} attempts: {inf_file}", console)
+            any_failed = True
+            continue
+
+        command = f'pnputil /add-driver "{inf_file}" /install'
+        log_message(log_path, f"Installing driver: {inf_file}", console)
+        returncode = run_command(command, log_path, console)
+        if returncode != 0:
+            log_message(log_path, f"Error installing {inf_file}: exit code {returncode}", console)
             any_failed = True
 
     final_code = 0 if not any_failed else 1
@@ -186,18 +185,18 @@ def start_gui():
         path = filedialog.askdirectory()
         if path:
             entry.delete(0, tk.END)
-            entry.insert(0, path)
+            entry.insert(0, os.path.normpath(path))
 
     def select_log(entry):
         path = filedialog.asksaveasfilename(defaultextension=".log",
                                             initialfile=f"DriverImporter-{PC_NAME}.log")
         if path:
             entry.delete(0, tk.END)
-            entry.insert(0, path)
+            entry.insert(0, os.path.normpath(path))
 
     def run_export():
-        folder = export_path_var.get()
-        logfile = None if export_nolog_var.get() else export_log_var.get()
+        folder = os.path.normpath(export_path_var.get())
+        logfile = None if export_nolog_var.get() else os.path.normpath(export_log_var.get())
         logfile = prepare_log(logfile, append_console)
         if not folder:
             messagebox.showerror("Missing Info", "Please select an export folder")
@@ -222,8 +221,8 @@ def start_gui():
         threading.Thread(target=task, daemon=True).start()
 
     def run_import():
-        folder = import_path_var.get()
-        logfile = None if import_nolog_var.get() else import_log_var.get()
+        folder = os.path.normpath(import_path_var.get())
+        logfile = None if import_nolog_var.get() else os.path.normpath(import_log_var.get())
         logfile = prepare_log(logfile, append_console)
         if not folder:
             messagebox.showerror("Missing Info", "Please select an import folder")
@@ -359,13 +358,16 @@ def start_console():
     parser.add_argument("-nolog", action="store_true", help="Do not create a log file")
     args = parser.parse_args()
 
-    log_file = None if args.nolog else prepare_log(args.log_file)
+    log_file_path = os.path.normpath(args.log_file) if args.log_file else None
+    log_file = None if args.nolog else prepare_log(log_file_path)
 
     try:
         if args.import_path:
-            import_drivers(args.import_path, log_file)
+            import_path = os.path.normpath(args.import_path)
+            import_drivers(import_path, log_file)
         elif args.export_path:
-            export_drivers(args.export_path, log_file)
+            export_path = os.path.normpath(args.export_path)
+            export_drivers(export_path, log_file)
         else:
             print("Missing -import or -export path")
     except Exception as e:
