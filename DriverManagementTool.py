@@ -260,7 +260,7 @@ def start_gui():
         threading.Thread(target=task, daemon=True).start()
 
     root = tk.Tk()
-    root.title("Driver Management Tool")
+    root.title("Driver Management Tool v.0.91")
     root.geometry("750x500")
     root.iconbitmap("./DrivermanagementTool.ico")
 
