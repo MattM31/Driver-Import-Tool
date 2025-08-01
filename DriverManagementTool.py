@@ -15,6 +15,22 @@ from tkinter import ttk, filedialog, messagebox, scrolledtext
 
 # --- Constants ---
 PC_NAME = socket.gethostname()
+
+def get_pc_model():
+    try:
+        creationflags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+        result = subprocess.run([
+            "powershell",
+            "-NoProfile",
+            "-Command",
+            "Get-CimInstance -Class Win32_ComputerSystem | Select-Object -ExpandProperty Model"
+        ], capture_output=True, text=True, creationflags=creationflags)
+        model = result.stdout.strip()
+        return model if model else "Unknown Model"
+    except Exception:
+        return "Unknown Model"
+
+PC_MODEL = get_pc_model()
 DEFAULT_LOG_PATH = f"C:\\DriverManagementTool-{PC_NAME}.log"
 RETRY_ATTEMPTS = 3
 RETRY_DELAY = 10
@@ -268,6 +284,11 @@ def start_gui():
     if not is_admin():
         messagebox.showwarning("Admin Rights", "Warning: This tool is not running as Administrator. Functions may fail.")
 
+    info_frame = ttk.Frame(root)
+    info_frame.pack(fill='x', padx=5, pady=5)
+    ttk.Label(info_frame, text=PC_NAME, anchor="w").pack(side="left", expand=True, fill='x')
+    ttk.Label(info_frame, text=PC_MODEL, anchor="e").pack(side="right")
+
     nb = ttk.Notebook(root)
     frame_import = ttk.Frame(nb)
     frame_export = ttk.Frame(nb)
@@ -378,6 +399,8 @@ def start_console():
     parser = argparse.ArgumentParser()
     parser.add_argument("-console", action="store_true")
     parser.add_argument("-import", dest="import_path", type=str, help="Path to import drivers from")
+    parser.add_argument("-importAuto", dest="import_auto", type=str,
+                        help="Base path to import drivers from using model subfolder")
     parser.add_argument("-export", dest="export_path", type=str, help="Path to export drivers to")
     parser.add_argument("-logFilePath", dest="log_file", type=str, default=DEFAULT_LOG_PATH)
     parser.add_argument("-nolog", action="store_true", help="Do not create a log file")
@@ -387,7 +410,13 @@ def start_console():
     log_file = None if args.nolog else prepare_log(log_file_path)
 
     try:
-        if args.import_path:
+        if args.import_auto:
+            base = os.path.normpath(args.import_auto)
+            import_path = os.path.normpath(os.path.join(base, PC_MODEL))
+            log_message(log_file, f"Auto import model: {PC_MODEL}")
+            log_message(log_file, f"Full import path: {import_path}")
+            import_drivers(import_path, log_file)
+        elif args.import_path:
             import_path = os.path.normpath(args.import_path)
             import_drivers(import_path, log_file)
         elif args.export_path:
