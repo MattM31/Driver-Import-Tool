@@ -1,0 +1,9 @@
+DriverManagementTool.exe -console -import "E:\Drivers"
+
+DriverManagementTool.exe -console -importAuto "E:\"
+
+DriverManagementTool.exe -console -importAuto "E:\" -nolog
+
+DriverManagementTool.exe -console -importAuto "\\10.20.8.226\GPFiles$"
+
+DriverManagementTool.exe -console -importAuto E:\ -logFilePath E:\logfile.log
