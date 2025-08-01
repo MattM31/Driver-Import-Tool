@@ -36,6 +36,20 @@ RETRY_ATTEMPTS = 3
 RETRY_DELAY = 10
 
 # --- Utilities ---
+def sanitize_cli_path(path: str) -> str:
+    """Strip surrounding or stray quotes and normalise path."""
+    if not path:
+        return ""
+    path = path.strip()
+    if len(path) >= 2 and path[0] == path[-1] == '"':
+        path = path[1:-1]
+    else:
+        if path.startswith('"'):
+            path = path[1:]
+        if path.endswith('"'):
+            path = path[:-1]
+    return os.path.normpath(path)
+
 def is_admin():
     try:
         return ctypes.windll.shell32.IsUserAnAdmin()
@@ -406,21 +420,21 @@ def start_console():
     parser.add_argument("-nolog", action="store_true", help="Do not create a log file")
     args = parser.parse_args()
 
-    log_file_path = os.path.normpath(args.log_file) if args.log_file else None
+    log_file_path = sanitize_cli_path(args.log_file) if args.log_file else None
     log_file = None if args.nolog else prepare_log(log_file_path)
 
     try:
         if args.import_auto:
-            base = os.path.normpath(args.import_auto)
+            base = sanitize_cli_path(args.import_auto)
             import_path = os.path.normpath(os.path.join(base, PC_MODEL))
             log_message(log_file, f"Auto import model: {PC_MODEL}")
             log_message(log_file, f"Full import path: {import_path}")
             import_drivers(import_path, log_file)
         elif args.import_path:
-            import_path = os.path.normpath(args.import_path)
+            import_path = sanitize_cli_path(args.import_path)
             import_drivers(import_path, log_file)
         elif args.export_path:
-            export_path = os.path.normpath(args.export_path)
+            export_path = sanitize_cli_path(args.export_path)
             export_drivers(export_path, log_file)
         else:
             print("Missing -import or -export path")
