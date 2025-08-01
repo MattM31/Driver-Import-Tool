@@ -38,6 +38,7 @@ For scripting or remote execution, run with the `-console` flag:
 DriverImportTool.exe -console -import "C:\Drivers\LenovoM74"
 DriverImportTool.exe -console -export "C:\Drivers\HPEliteDesk"
 DriverImportTool.exe -console -import "C:\Drivers\Dell" -logFilePath "D:\Logs\CustomImportLog.log"
+DriverImportTool.exe -console -export "C:\Drivers\HP" -nolog
 ```
 
 If `-logFilePath` is omitted, logs are saved to:
@@ -45,6 +46,7 @@ If `-logFilePath` is omitted, logs are saved to:
 ```
 C:\DriverImporter-{PCNAME}.log
 ```
+Use `-nolog` to skip creating a log file.
 
 ---
 
