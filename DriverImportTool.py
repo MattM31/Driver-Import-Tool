@@ -263,10 +263,6 @@ def start_gui():
     root.geometry("750x500")
 
     
-    icon_path = os.path.join(os.path.dirname(__file__), "DriverManagementTool.ico")
-    if os.path.exists(icon_path):
-        root.iconbitmap(icon_path)
-
     if not is_admin():
         messagebox.showwarning("Admin Rights", "Warning: This tool is not running as Administrator. Functions may fail.")
 
