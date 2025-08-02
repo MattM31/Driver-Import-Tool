@@ -300,8 +300,16 @@ def start_gui():
 
     info_frame = ttk.Frame(root)
     info_frame.pack(fill='x', padx=5, pady=5)
-    ttk.Label(info_frame, text=PC_NAME, anchor="w").pack(side="left", expand=True, fill='x')
-    ttk.Label(info_frame, text=PC_MODEL, anchor="e").pack(side="right")
+    header_font = ("Segoe UI", 12, "bold")
+
+    ttk.Label(info_frame, text="Device Name:", font=header_font).grid(row=0, column=0, sticky="w")
+    ttk.Label(info_frame, text=PC_NAME, font=header_font).grid(row=0, column=1, sticky="w", padx=(0, 20))
+    ttk.Label(info_frame, text="Model:", font=header_font).grid(row=0, column=2, sticky="e")
+    model_entry = ttk.Entry(info_frame, font=header_font, width=len(PC_MODEL) + 2)
+    model_entry.insert(0, PC_MODEL)
+    model_entry.config(state="readonly")
+    model_entry.grid(row=0, column=3, sticky="e")
+    info_frame.columnconfigure(1, weight=1)
 
     nb = ttk.Notebook(root)
     frame_import = ttk.Frame(nb)
@@ -315,7 +323,7 @@ def start_gui():
 
     import_path_var = tk.StringVar()
     import_log_var = tk.StringVar(value=DEFAULT_LOG_PATH)
-    export_path_var = tk.StringVar()
+    export_path_var = tk.StringVar(value=f"C:\\{PC_MODEL}")
     export_log_var = tk.StringVar(value=DEFAULT_LOG_PATH)
     import_nolog_var = tk.IntVar(value=0)
     export_nolog_var = tk.IntVar(value=0)
@@ -387,12 +395,23 @@ def start_gui():
 3. Click Start to run the process.
 
 --- Console Mode ---
-Run the tool from command line:
-  DriverImportTool.exe -console -import "C:\\Path" -logFilePath "C:\\log.txt"
-  DriverImportTool.exe -console -export "C:\\Path" -nolog
+Examples:
+  DriverImportTool.exe -console -import "C:\\Drivers"
+  DriverImportTool.exe -console -export "C:\\Out" -logFilePath "C:\\Logs\\export.log"
+  DriverImportTool.exe -console -importAuto "\\\\Server\\Share" -nolog
 
-Note: Network drivers are installed last to reduce risk of connection dropouts.
-Admin rights are required for full functionality.
+Switches:
+  -import "PATH"      Import drivers from folder
+  -importAuto "PATH"  Import using PATH\\{PC_MODEL}
+  -export "PATH"      Export drivers to folder
+  -logFilePath "PATH" Custom log file location
+  -nolog              Do not create a log file
+
+Notes:
+* Wrap paths in quotes.
+* Do not end paths with a trailing backslash.
+* Network drivers are installed last to reduce risk of connection dropouts.
+* Admin rights are required for full functionality.
     """
     ttk.Label(frame_help, text=help_text, justify="left").pack(padx=10, pady=10, anchor="w")
     ttk.Label(root, text="Version 0.91").pack(side="bottom", anchor="e", padx=10, pady=5)

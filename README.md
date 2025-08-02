@@ -27,6 +27,7 @@ Just run the `.exe` or `.py` file directly (no switches) and you’ll be greeted
 * Live command-line output in the window
 * Help tab with usage instructions
 * Version display: `Driver Import Tool v0.9`
+* Device name and model shown at the top (model text can be copied)
 
 ---
 
@@ -41,6 +42,16 @@ DriverImportTool.exe -console -import "C:\Drivers\Dell" -logFilePath "D:\Logs\Cu
 DriverImportTool.exe -console -export "C:\Drivers\HP" -nolog
 DriverImportTool.exe -console -importAuto "\\10.20.8.226\Drivers$"
 ```
+
+### Command Line Switches
+
+* `-import "PATH"` – import drivers from folder
+* `-importAuto "PATH"` – import using `PATH\{PC_MODEL}`
+* `-export "PATH"` – export drivers to folder
+* `-logFilePath "PATH"` – custom log file location
+* `-nolog` – do not create a log file
+
+**Notes:** Paths with spaces must be wrapped in quotes and should not end with a trailing backslash.
 
 If `-logFilePath` is omitted, logs are saved to:
 
