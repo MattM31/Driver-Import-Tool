@@ -293,7 +293,7 @@ def start_gui():
     root = tk.Tk()
     titleText = "Driver Management Tool Version " + versionNumber
     root.title(titleText)
-    root.geometry("750x750")
+    root.geometry("750x850")
     root.iconbitmap(default=os.path.join(os.path.dirname(__file__), 'DriverManagementTool.ico'))
 
     # Apply a clean, Apple-inspired look
