@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
+import tkinter.font as tkfont
 
 # --- Constants ---
 PC_NAME = socket.gethostname()
@@ -295,13 +296,37 @@ def start_gui():
     root.geometry("750x750")
     root.iconbitmap(default=os.path.join(os.path.dirname(__file__), 'DriverManagementTool.ico'))
 
-    
+    # Apply a clean, Apple-inspired look
+    style = ttk.Style()
+    style.theme_use("clam")
+    root.configure(bg="#F2F2F2")
+
+    preferred_fonts = ["SF Pro Text", "Helvetica Neue", "Helvetica", "Arial"]
+    available_fonts = set(tkfont.families())
+    for family in preferred_fonts:
+        if family in available_fonts:
+            default_family = family
+            break
+    else:
+        default_family = "Arial"
+    default_font = tkfont.nametofont("TkDefaultFont")
+    default_font.configure(family=default_family, size=12)
+    style.configure(".", font=default_font)
+    header_font = (default_family, 13, "bold")
+
+    style.configure("TFrame", background="#F2F2F2")
+    style.configure("TLabel", background="#F2F2F2")
+    style.configure("TCheckbutton", background="#F2F2F2")
+    style.configure("TNotebook", background="#F2F2F2")
+    style.configure("TNotebook.Tab", padding=(12, 8), font=default_font)
+    style.configure("TButton", padding=6)
+    style.configure("TProgressbar", troughcolor="#E0E0E0", background="#007AFF")
+
     if not is_admin():
         messagebox.showwarning("Admin Rights", "Warning: This tool is not running as Administrator. Functions may fail.")
 
     info_frame = ttk.Frame(root)
     info_frame.pack(fill='x', padx=5, pady=5)
-    header_font = ("Segoe UI", 12, "bold")
 
     ttk.Label(info_frame, text="Device Name:", font=header_font).grid(row=0, column=0, sticky="w")
     ttk.Label(info_frame, text=PC_NAME, font=header_font).grid(row=0, column=1, sticky="w", padx=(0, 20))
@@ -373,9 +398,17 @@ def start_gui():
     start_export_btn = ttk.Button(frame_export, text="Start", command=run_export)
     start_export_btn.pack(pady=10)
 
-    console = scrolledtext.ScrolledText(root, height=12, bg="black", fg="white")
+    console = scrolledtext.ScrolledText(
+        root,
+        height=12,
+        bg="#1E1E1E",
+        fg="#F5F5F5",
+        insertbackground="#F5F5F5",
+        bd=0,
+        highlightthickness=0,
+    )
     console.pack(fill='x', padx=5, pady=5)
-    console.tag_config('error', foreground='red')
+    console.tag_config('error', foreground='#FF3B30')
 
     def append_console(text, tag=None):
         def _write():
