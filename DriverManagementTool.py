@@ -1,4 +1,3 @@
-# Driver Management Tool v0.91
 # Python 3.13 compatible
 import os
 import subprocess
@@ -15,6 +14,7 @@ from tkinter import ttk, filedialog, messagebox, scrolledtext
 
 # --- Constants ---
 PC_NAME = socket.gethostname()
+versionNumber = "1.0"
 
 def get_pc_model():
     try:
@@ -290,8 +290,9 @@ def start_gui():
         threading.Thread(target=task, daemon=True).start()
 
     root = tk.Tk()
-    root.title("Driver Management Tool v.0.91")
-    root.geometry("750x500")
+    titleText = "Driver Management Tool Version " + versionNumber
+    root.title(titleText)
+    root.geometry("750x750")
     root.iconbitmap(default=os.path.join(os.path.dirname(__file__), 'DriverManagementTool.ico'))
 
     
@@ -414,7 +415,8 @@ Notes:
 * Admin rights are required for full functionality.
     """
     ttk.Label(frame_help, text=help_text, justify="left").pack(padx=10, pady=10, anchor="w")
-    ttk.Label(root, text="Version 0.91").pack(side="bottom", anchor="e", padx=10, pady=5)
+    labelText = "Version " + versionNumber
+    ttk.Label(root, text=labelText).pack(side="bottom", anchor="e", padx=10, pady=5)
 
     root.mainloop()
 
