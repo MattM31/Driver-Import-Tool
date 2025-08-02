@@ -40,7 +40,7 @@ DriverImportTool.exe -console -import "C:\Drivers\LenovoM74"
 DriverImportTool.exe -console -export "C:\Drivers\HPEliteDesk"
 DriverImportTool.exe -console -import "C:\Drivers\Dell" -logFilePath "D:\Logs\CustomImportLog.log"
 DriverImportTool.exe -console -export "C:\Drivers\HP" -nolog
-DriverImportTool.exe -console -importAuto "\\10.20.8.226\Drivers$"
+DriverImportTool.exe -console -importAuto "\\10.10.10.200\Drivers$"
 ```
 
 ### Command Line Switches
@@ -77,18 +77,6 @@ Use `-nolog` to skip creating a log file.
 python DriverImportTool.py
 ```
 
-### 🔹 Build Executable
-
-To package into a `.exe`:
-
-```bash
-pyinstaller --noconfirm --onefile --windowed DriverImportTool.py
-```
-
-Console mode now opens its own window when the `-console` flag is used, so you
-can keep the `--windowed` option.
-
----
 
 ## 🗑️ Logging
 
@@ -108,18 +96,7 @@ Each action is logged with a timestamp. You can view or archive the `.log` file 
 
 MIT Licence – you are free to use, modify, and distribute.
 
----
 
-## 💠 Future Plans
-
-* Add support for exporting by specific driver classes
-* Dark mode GUI toggle
-* System tray background option for remote install monitoring
-* Optional auto-retry toggle in GUI
-* Drag-and-drop folder support
-* Scheduled import/export (GUI timer)
-
----
 
 ## 👤 Author
 
